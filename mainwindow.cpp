@@ -9,15 +9,24 @@ MainWindow::MainWindow(QWidget *parent)
     , a(1)
     , b(2)
     , c(0)
-    , pointCount(100)
+    , pointCount(1000)
 {
     ui->setupUi(this);
 
-    labelPixmap = QPixmap(ui->centralwidget->width(),ui->centralwidget->height());
-    plot = QPixmap(ui->centralwidget->width(),ui->centralwidget->height());
+    firstPixmap = QPixmap(ui->centralwidget->width(),ui->centralwidget->height());
+    secondPixmap = QPixmap(ui->centralwidget->width(),ui->centralwidget->height());
 
-    ui->label->setPixmap(labelPixmap);
+    ui->label->setPixmap(firstPixmap);
     connect(&myDialog, &MyDialog::signal, this, &MainWindow::repaint);
+
+
+    QString msg = "y = ";
+    msg += QString::number(a);
+    msg += " * x^";
+    msg += QString::number(b);
+    msg += " + ";
+    msg += QString::number(c);
+    ui->statusbar->showMessage(msg);
 }
 
 MainWindow::~MainWindow()
@@ -30,37 +39,71 @@ void MainWindow::paintEvent(QPaintEvent *pEvent)
     if(xEnd <= xStart){
         return;
     }
-    QPainter painter(&labelPixmap);
-    painter.drawPixmap(0, 0, plot);
 
-    double width = ui->label->width();
+    double width = std::min(ui->centralwidget->width(), ui->centralwidget->height());
+
+    QPainter painter(&firstPixmap);
+    painter.drawPixmap(0, 0, secondPixmap);
+
     painter.setPen(QPen(Qt::black, 2));
-    //double width = std::max(xStart, xEnd);
     painter.drawLine(width/2, 0, width / 2, width);
     painter.drawLine(0, width/2, width, width/2);
-    //painter.draw
 
     painter.setPen(QPen(Qt::red, 4));
-
     double h = (xEnd - xStart)/pointCount;
-    double y1 = a * std::pow(xStart, b) + c;
-    double y2;
     double step = xStart;
-    for(int i = 0; i < pointCount; ++i){
-        y2 = a * std::pow(step, b) + c;
-        painter.drawLine(width/2.f + step, width/2.f - y1, width/2.f + step + h, width/2.f - y2);
-        y1 = y2;
+    double xScale = width / (xEnd - xStart);
+    double maxY = DBL_MIN;
+    double minY = DBL_MAX;
+
+    std::vector<std::pair<double, double>> points;
+
+    for(int i = 0; i <= pointCount; ++i){
+        if((b < 0 && step > -0.01 && step < 0.01) ||
+           (b > -1 && b < 0 && step <= 0) ||
+           (b > 0 && b < 1 && step < 0)){
+            step += h;
+            continue;
+        }
+
+        double y = a * std::pow(step, b) + c;
+
+        if(maxY < y){
+            maxY = y;
+        }
+
+        if(minY > y){
+            minY = y;
+        }
+
+        points.push_back(std::pair(step, y));
         step += h;
     }
 
+    double yScale = (width / 2)  / (maxY - minY);
 
-    ui->label->setPixmap(labelPixmap);
+    for(int i = 0; i < points.size() - 1; ++i){
+        painter.drawLine(width/2 + points[i].first * xScale, width/2 - (points[i].second * yScale),
+                         width/2 + points[i + 1].first * xScale, width/2 - (points[i + 1].second * yScale));
+    }
+
+    painter.setPen(QPen(Qt::black, 2));
+    painter.drawText((width/2 + xStart * xScale) < 0 ? 0 : width/2 + xStart * xScale,
+                     width/2 + 15, QString::number(xStart));
+    painter.drawText(width/2 + xEnd * xScale + h * xScale >= width ? width - 20 : width/2 + xEnd * xScale + h * xScale,
+                     width/2 + 15, QString::number(xEnd));
+    painter.drawText(width/2 + 5,
+                     width/2 - maxY * yScale < 20 ? 20 : width/2 - maxY * yScale, QString::number(maxY));
+    painter.drawText(width/2 + 5,
+                     width/2 - minY * yScale > width - 20 ? width - 20 : width/2 - minY * yScale, QString::number(minY));
+
+    ui->label->setPixmap(firstPixmap);
 }
 
 void MainWindow::resizeEvent(QResizeEvent *pEvent){
     double plotSize = std::min(ui->centralwidget->width(),ui->centralwidget->height());
-    plot = QPixmap(plotSize,plotSize);
-    labelPixmap = QPixmap(plotSize,plotSize);
+    secondPixmap = QPixmap(plotSize,plotSize);
+    firstPixmap = QPixmap(plotSize,plotSize);
     ui->label->resize(plotSize, plotSize);
 }
 
@@ -87,5 +130,12 @@ void MainWindow::repaint(double _xStart, double _xEnd, double _a, double _b, dou
     a = _a;
     b = _b;
     c = _c;
+    QString msg = "y = ";
+    msg += QString::number(a);
+    msg += " * x^";
+    msg += QString::number(b);
+    msg += " + ";
+    msg += QString::number(c);
+    ui->statusbar->showMessage(msg);
 }
 

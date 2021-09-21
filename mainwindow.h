@@ -20,8 +20,8 @@ public:
     ~MainWindow();
 
 protected:
-    QPixmap labelPixmap;
-    QPixmap plot;
+    QPixmap firstPixmap;
+    QPixmap secondPixmap;
 
     MyDialog myDialog;
 
@@ -43,5 +43,6 @@ private:
     double xEnd;
     double a, b, c;
     int pointCount;
+    //double plotSize;
 };
 #endif // MAINWINDOW_H
