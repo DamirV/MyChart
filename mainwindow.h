@@ -20,8 +20,8 @@ public:
     ~MainWindow();
 
 protected:
-    QPixmap labelPixmap;
-    QPixmap plot;
+    QPixmap firstPixmap;
+    QPixmap secondPixmap;
 
     MyDialog myDialog;
 
