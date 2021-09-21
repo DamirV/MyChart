@@ -43,5 +43,6 @@ private:
     double xEnd;
     double a, b, c;
     int pointCount;
+    //double plotSize;
 };
 #endif // MAINWINDOW_H

@@ -18,6 +18,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     ui->label->setPixmap(labelPixmap);
     connect(&myDialog, &MyDialog::signal, this, &MainWindow::repaint);
+
 }
 
 MainWindow::~MainWindow()
@@ -30,29 +31,39 @@ void MainWindow::paintEvent(QPaintEvent *pEvent)
     if(xEnd <= xStart){
         return;
     }
+    double width = std::min(ui->centralwidget->width(),ui->centralwidget->height());
+
     QPainter painter(&labelPixmap);
     painter.drawPixmap(0, 0, plot);
 
-    double width = ui->label->width();
     painter.setPen(QPen(Qt::black, 2));
-    //double width = std::max(xStart, xEnd);
     painter.drawLine(width/2, 0, width / 2, width);
     painter.drawLine(0, width/2, width, width/2);
-    //painter.draw
 
     painter.setPen(QPen(Qt::red, 4));
-
     double h = (xEnd - xStart)/pointCount;
-    double y1 = a * std::pow(xStart, b) + c;
-    double y2;
-    double step = xStart;
+    double yStart = a * std::pow(xStart, b) + c;
+    double yEnd;
+    double step = xStart + h;
+
+    double xScale = width / (xEnd - xStart);
+    double maxY = std::max( std::abs(a * pow(xStart, b) + c), std::abs(a * pow(xEnd, b) + c));
+    double yScale = (width/2) / (maxY);
+
     for(int i = 0; i < pointCount; ++i){
-        y2 = a * std::pow(step, b) + c;
-        painter.drawLine(width/2.f + step, width/2.f - y1, width/2.f + step + h, width/2.f - y2);
-        y1 = y2;
+        yEnd = a * std::pow(step, b) + c;
+        painter.drawLine(width/2 + step * xScale, width/2 - yStart * yScale,
+                         width/2 + step * xScale + h * xScale, width/2 - yEnd * yScale);
+        yStart = yEnd;
         step += h;
     }
 
+    painter.setPen(QPen(Qt::black, 2));
+    painter.drawText((width/2 + xStart * xScale) < 0 ? 0 : width/2 + xStart * xScale,
+                     width/2 + 15, QString::number(xStart));
+    painter.drawText(width/2 + xEnd * xScale + h * xScale >= width ? width - 20 : width/2 + xEnd * xScale + h * xScale,
+                     width/2 + 15, QString::number(xEnd));
+    painter.drawText(width/2, width/2 - maxY * yScale + 20, QString::number(maxY));
 
     ui->label->setPixmap(labelPixmap);
 }
