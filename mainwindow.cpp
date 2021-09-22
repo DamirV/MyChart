@@ -115,7 +115,7 @@ void MainWindow::on_actionQuit_triggered()
 
 void MainWindow::on_actionAbout_program_triggered()
 {
-    QMessageBox::information(this, tr("Just graph"), tr("some info"));
+    QMessageBox::information(this, tr("Help"), tr("Power function"));
 }
 
 
